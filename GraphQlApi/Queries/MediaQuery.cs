@@ -1,12 +1,14 @@
-﻿using System.Reflection;
+﻿using Common;
+using System.Reflection;
 
 namespace GraphQlApi.Queries;
 
+[ExtendObjectType(typeof(Query))]
 public class MediaQuery
 {
     private byte[] LoadBinary(string resourceName)
     {
-        var assembly = typeof(MediaQuery).Assembly;
+        var assembly = typeof(TextPayload).Assembly;
         using var stream = assembly.GetManifestResourceStream(resourceName)
             ?? throw new FileNotFoundException($"Resource '{resourceName}' not found.");
         using var ms = new MemoryStream();
