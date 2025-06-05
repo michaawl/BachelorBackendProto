@@ -1,0 +1,58 @@
+# ──────────── Ignore the entire Common project ────────────
+Common/
+
+# ================================
+# > .NET / Visual Studio / Rider 
+# ================================
+
+## User-specific files
+.vs/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+*.sln.docstates
+
+## Build results (binaries / intermediate artifacts)
+**/[Bb]in/
+**/[Oo]bj/
+
+## Visual Studio Code workspace files
+.vscode/
+
+## Rider / JetBrains IDE
+.idea/
+*.sln.iml
+
+## OS generated files
+.DS_Store
+Thumbs.db
+
+# ================================
+# > NuGet / Paket
+# ================================
+
+# Ignore NuGet packages folder (if you have one in the repo)
+**/[Pp]ackages/
+# The global packages folder (on dev machines)
+.nuget/packages/
+# NuGet v3 cache folder
+.vscode/.nuget/
+
+# Auto-generated lock files (you may choose to remove or keep these)
+project.lock.json
+project.assets.json
+
+# Paket files
+.paket/
+paket-files/
+
+# ================================
+# > Test Data / Custom Folders
+# ================================
+
+# If you store test data in a directory called “TestData” anywhere, ignore it:
+TestData/
+**/TestData/
+
+# If you have per‐test “Data” or “SampleData” folders u
