@@ -1,8 +1,8 @@
 using GraphQlApi.Queries;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1) Add GraphQL / HotChocolate
 builder.Services
     .AddGraphQLServer()
         .ModifyRequestOptions(opt =>
@@ -15,23 +15,26 @@ builder.Services
     .AddTypeExtension<MediaQuery>()
     .AddTypeExtension<BlogQuery>();
 
-// 2) Add CORS and allow your frontend origin
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ConfigureEndpointDefaults(lo =>
+        lo.Protocols = HttpProtocols.Http1AndHttp2);
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // your React/Vite origin
+        policy.WithOrigins("http://localhost:5173") 
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
+ApiCache.Initialize();
 
-// 3) Use CORS before MapGraphQL
 app.UseCors("AllowFrontend");
-
-// 4) Finally map GraphQL endpoint at “/graphql”
 app.MapGraphQL();
 
 app.Run();

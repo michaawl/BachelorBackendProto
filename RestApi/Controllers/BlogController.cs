@@ -13,15 +13,5 @@ namespace RestApi.Controllers
             var posts = BlogSampleData.Posts;
             return Ok(posts);
         }
-
-        [HttpGet("{id}")]
-        public IActionResult GetPostById(int id)
-        {
-            var post = BlogSampleData.Posts.FirstOrDefault(p => p.Id == id);
-            if (post == null)
-                return NotFound();
-
-            return Ok(post);
-        }
     }
 }

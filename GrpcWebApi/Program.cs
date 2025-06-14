@@ -1,11 +1,9 @@
-﻿using Grpc.AspNetCore.Web;
-using GrpcWebApi.Services;
+﻿using GrpcWebApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddGrpc();
 
-// CORS konfigurieren
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -16,16 +14,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.WebHost.ConfigureKestrel(options =>
+builder.Services.AddGrpc(options =>
 {
-    options.ListenAnyIP(5109, listenOptions =>
-    {
-        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
-    });
+    options.MaxReceiveMessageSize = 200 * 1024 * 1024;
+    options.MaxSendMessageSize = 200 * 1024 * 1024;
 });
 
-
 var app = builder.Build();
+ApiCache.Initialize();
 
 app.UseCors();
 app.UseGrpcWeb();
@@ -36,6 +32,6 @@ app.MapGrpcService<BlogService>().EnableGrpcWeb().RequireCors();
 
 app.MapGet("/test-cors", () => "CORS works!").RequireCors();
 
-app.MapGet("/", () => "This server is running. Use a gRPC client to communicate with gRPC endpoints.");
+app.MapGet("/", () => "GRPC server is running.");
 
 app.Run();

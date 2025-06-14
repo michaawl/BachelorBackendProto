@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
-using Common;
+using Microsoft.Extensions.Logging;
 
 namespace RestApi.Controllers
 {
@@ -15,36 +14,37 @@ namespace RestApi.Controllers
             _logger = logger;
         }
 
-        private FileStreamResult LoadMedia(string resourceName, string contentType)
-        {
-            var assembly = typeof(TextPayload).Assembly;
-            var stream = assembly.GetManifestResourceStream(resourceName);
-
-            if (stream == null)
-            {
-                var resources = string.Join("\n", assembly.GetManifestResourceNames());
-                throw new FileNotFoundException($"Resource '{resourceName}' not found. Available:\n{resources}");
-            }
-
-            return File(stream, contentType);
-        }
-
         [HttpGet("image")]
         public IActionResult GetImage()
         {
-            return LoadMedia("Common.Payload.Media.foto.jpg", "image/jpeg");
+            if (ApiCache.ImageData == null || ApiCache.ImageData.Length == 0)
+            {
+                return NotFound("Image resource not found in MediaCache.");
+            }
+
+            return File(ApiCache.ImageData, "image/jpeg");
         }
 
         [HttpGet("audio")]
         public IActionResult GetAudio()
         {
-            return LoadMedia("Common.Payload.Media.music.wav", "audio/wav");
+            if (ApiCache.AudioData == null || ApiCache.AudioData.Length == 0)
+            {
+                return NotFound("Audio resource not found in MediaCache.");
+            }
+
+            return File(ApiCache.AudioData, "audio/wav");
         }
 
         [HttpGet("video")]
         public IActionResult GetVideo()
         {
-            return LoadMedia("Common.Payload.Media.video.mp4", "video/mp4");
+            if (ApiCache.VideoData == null || ApiCache.VideoData.Length == 0)
+            {
+                return NotFound("Video resource not found in MediaCache.");
+            }
+
+            return File(ApiCache.VideoData, "video/mp4");
         }
     }
 }

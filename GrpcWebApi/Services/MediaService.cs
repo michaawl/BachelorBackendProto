@@ -1,72 +1,67 @@
-﻿using Common;
+﻿using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
-using GrpcWebApi.Protos;
-using Microsoft.Extensions.Logging;
-using System.IO;
-using System.Threading.Tasks;
+using Grpc.Core;  
+using GrpcWebApi.Protos;       
 
 namespace GrpcWebApi.Services
 {
     public class MediaService : Media.MediaBase
     {
         private readonly ILogger<MediaService> _logger;
+        private const int CHUNK_SIZE = 64 * 1024;
 
         public MediaService(ILogger<MediaService> logger)
         {
             _logger = logger;
         }
 
-        private (byte[], string) LoadMedia(string resourceName, string contentType)
+        public override async Task GetImage(
+            Empty request,
+            IServerStreamWriter<Chunk> responseStream,
+            ServerCallContext context)
         {
-            var assembly = typeof(TextPayload).Assembly;
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null)
-            {
-                var resources = string.Join("\n", assembly.GetManifestResourceNames());
-                throw new FileNotFoundException($"Resource '{resourceName}' not found. Available:\n{resources}");
-            }
-            using var ms = new MemoryStream();
-            stream.CopyTo(ms);
-            return (ms.ToArray(), contentType);
+            await StreamBytes(ApiCache.ImageData, responseStream, context);
         }
 
-        public override Task<MediaResponse> GetImage(Empty request, ServerCallContext context)
+        public override async Task GetAudio(
+            Empty request,
+            IServerStreamWriter<Chunk> responseStream,
+            ServerCallContext context)
+        {
+            await StreamBytes(ApiCache.AudioData, responseStream, context);
+        }
+
+        public override async Task GetVideo(
+            Empty request,
+            IServerStreamWriter<Chunk> responseStream,
+            ServerCallContext context)
+        {
+            await StreamBytes(ApiCache.VideoData, responseStream, context);
+        }
+
+        private async Task StreamBytes(
+            byte[] buffer,
+            IServerStreamWriter<Chunk> stream,
+            ServerCallContext context)
         {
             try
             {
-                var (bytes, contentType) = LoadMedia("Common.Payload.Media.foto.jpg", "image/jpeg");
-                return Task.FromResult(new MediaResponse
+                for (int offset = 0; offset < buffer.Length; offset += CHUNK_SIZE)
                 {
-                    ContentType = contentType,
-                    Data = Google.Protobuf.ByteString.CopyFrom(bytes)
-                });
+                    int length = Math.Min(CHUNK_SIZE, buffer.Length - offset);
+                    var chunk = new Chunk
+                    {
+                        Data = ByteString.CopyFrom(buffer, offset, length)
+                    };
+                    await stream.WriteAsync(chunk);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load image resource!");
-                throw new RpcException(new Status(StatusCode.NotFound, $"Could not load image: {ex.Message}"));
+                _logger.LogError(ex, "Error streaming data");
+                throw new RpcException(
+                    new Status(StatusCode.Internal, "Streaming error"));
             }
-        }
-
-        public override Task<MediaResponse> GetAudio(Empty request, ServerCallContext context)
-        {
-            var (bytes, contentType) = LoadMedia("Common.Payload.Media.music.wav", "audio/wav");
-            return Task.FromResult(new MediaResponse
-            {
-                ContentType = contentType,
-                Data = Google.Protobuf.ByteString.CopyFrom(bytes)
-            });
-        }
-
-        public override Task<MediaResponse> GetVideo(Empty request, ServerCallContext context)
-        {
-            var (bytes, contentType) = LoadMedia("Common.Payload.Media.video.mp4", "video/mp4");
-            return Task.FromResult(new MediaResponse
-            {
-                ContentType = contentType,
-                Data = Google.Protobuf.ByteString.CopyFrom(bytes)
-            });
         }
     }
 }
